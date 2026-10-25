@@ -18,24 +18,71 @@ export default function QueryProcessor(query: string): string {
     return String(Math.max(...n));
   }
 
-  if (q.includes("plus")) {
-    return String(n.reduce((a, b) => a + b, 0));
+  if (q.includes("smallest")) {
+    return String(Math.min(...n));
   }
 
-  if (q.includes("multiplied")) {
-    return String(n.reduce((a, b) => a * b, 1));
+  if (q.includes("primes")) {
+    const isPrime = (x: number) => {
+      if (x < 2) return false;
+      for (let i = 2; i * i <= x; i++) if (x % i === 0) return false;
+      return true;
+    };
+    return n.filter(isPrime).join(", ");
   }
 
-  if (q.includes("minus")) {
-    return String(n[0] - n[1]);
+  if (q.includes("square and a cube")) {
+    return n
+      .filter((x) => Math.round(Math.pow(x, 1 / 6)) ** 6 === x)
+      .join(", ");
+  }
+
+  if (q.startsWith("what is") && n.length >= 2) {
+    try {
+      const t = q
+        .replace("what is", "")
+        .replace("?", "")
+        .replace(/to the power of/g, "^")
+        .replace(/multiplied by/g, "*")
+        .replace(/plus/g, "+")
+        .replace(/minus/g, "-")
+        .trim()
+        .split(/\s+/);
+      const pow = (a: bigint, b: bigint) => {
+        let r = BigInt(1);
+        for (let k = 0; k < Number(b); k++) r = r * a;
+        return r;
+      };
+      const nums: bigint[] = [];
+      const ops: string[] = [];
+      for (let i = 0; i < t.length; i++) {
+        if (i % 2 === 0) nums.push(BigInt(t[i]));
+        else ops.push(t[i]);
+      }
+      for (const level of [["^"], ["*"], ["+", "-"]]) {
+        for (let i = 0; i < ops.length; ) {
+          if (level.includes(ops[i])) {
+            const a = nums[i];
+            const b = nums[i + 1];
+            const r =
+              ops[i] === "^" ? pow(a, b) :
+              ops[i] === "*" ? a * b :
+              ops[i] === "+" ? a + b : a - b;
+            nums.splice(i, 2, r);
+            ops.splice(i, 1);
+          } else {
+            i++;
+          }
+        }
+      }
+      return nums[0].toString();
+    } catch {
+      return "";
+    }
   }
 
   if (q.includes("name")) {
     return "Eduardo";
-  }
-
-  if (q.includes("age")) {
-    return "67";
   }
 
   return "";
